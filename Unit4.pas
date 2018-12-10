@@ -57,7 +57,7 @@ var
 begin
   for a:=0 to high(bobot) do
     for b:=0 to high(bobot[a]) do
-      bobot[a,b]:= random-0.5;
+      bobot[a,b]:=random-0.5;
 end;
 
 {==============================================================================}
@@ -71,21 +71,21 @@ var
   UnitInput, UnitHiden: integer;
 
 begin
-  UnitInput:= high(bobot);
-  UnitHiden:= high(bobot[0]);
-  beta:= 0.7 * (power(UnitHiden, 1/UnitInput));
-
+  UnitInput:=high(bobot);
+  UnitHiden:=high(bobot[0]);
+  beta:=0.7*(power(UnitHiden,1/UnitInput));
+  
   for a:=1 to UnitHiden do
   begin
-    old:= 0;
-
+    old:=0;
+    
     for b:=1 to UnitInput-1 do
-      old:= old + sqr(bobot[b,a]);
-    old:= sqrt(old);
-
+      old:=old+sqr(bobot[b,a]);
+    old:=sqrt(old);
+    
     for b:=1 to UnitInput-1 do
-      bobot[b,a]:= beta * bobot[b,a] / old;
-    bobot[0,a]:= beta * (1 - 2 * random);
+      bobot[b,a]:=beta*bobot[b,a]/old;
+    bobot[0,a]:=beta*(1-2*random);
   end;
 end;
 
@@ -98,10 +98,10 @@ var
 begin
   for a:=1 to high(next) do
   begin
-    next[a]:= bobot[0,a];
-
+    next[a]:=bobot[0,a];
+    
     for b:=1 to high(prev) do
-      next[a]:= next[a] + bobot[b,a] * prev[b];
+      next[a]:=next[a]+bobot[b,a]*prev[b];
   end;
 end;
 
@@ -114,8 +114,8 @@ var
   a: integer;
 
 begin
-  for a:=1 to high(hasil) do
-    hasil[a]:= sigmoid(inp[a]);
+   for a:=1 to high(hasil) do
+    hasil[a]:=sigmoid(inp[a]);
 end;
 
 {==============================================================================}
@@ -143,7 +143,7 @@ end;
 {33. Turunan Sigmoid}
 function TurunanSigmoid(nilai: real):real;
 begin
-  result:=1/(1+(exp(-nilai)));
+  result:=sigmoid(nilai)*(1-sigmoid(nilai));
 end;
 
 {==============================================================================}
@@ -158,8 +158,8 @@ begin
   begin
     eror_in:=0;
     for b:=1 to high(bobot[a]) do
-      eror_in:= eror_in + eror_next[b] * bobot[a,b];
-    eror_j[a]:= eror_in * TurunanSigmoid(hiden_in[a]);
+      eror_in:=eror_in+eror_next[b]*bobot[a,b];
+    eror_j[a]:=eror_in*TurunanSigmoid(hiden_in[a]);
   end;
 end;
 
@@ -171,19 +171,19 @@ var
   a, b: integer;
   temp: Tdatabobot;
 begin
-  SetLength(temp, high(bobot) + 1);
+  setlength(temp,high(bobot)+1);
   for a:=0 to high(bobot) do
   begin
-    SetLength(temp[a], high(bobot[a]) + 1);
+    setlength(temp[a],high(bobot[a])+1);
     for b:=0 to high(bobot[a]) do
-      temp[a,b]:= bobot[a,b];
+      temp[a,b]:=bobot[a,b]
   end;
   for a:=0 to high(bobot) do
     for b:=0 to high(bobot[a]) do
-      bobot[a,b]:= bobot[a,b] + alpha * eror_next[b] * prev_data[a] + miu * (bobot[a,b] - oldbobot[a,b]);
+      bobot[a,b]:=bobot[a,b]+alpha*eror_next[b]*prev_data[a]+miu*(bobot[a,b]-oldbobot[a,b]);
   for a:=0 to high(bobot) do
     for b:=0 to high(bobot[a]) do
-      oldbobot[a,b]:= temp[a,b];
+      oldbobot[a,b]:=temp[a,b];
 end;
 
 end.
