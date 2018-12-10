@@ -116,10 +116,11 @@ var
   loop: word;
 begin
   AssignFile(F,namafile);
-  {$I-}
+ {$I-}
+
   Reset(F);
   Seek(F,0);
-  SetLength(RealData,MAXDATA);
+  SetLength(RealData, MAXDATA);
   for loop:=0 to MAXDATA-1 do
   begin
     Read(F,dumdata);
@@ -127,7 +128,7 @@ begin
   end;
 
   CloseFile(F);
-    {$I+}
+  {$I+}
 end;
 
 {==============================================================================}
@@ -139,33 +140,32 @@ var
   loop2: Byte;
 
 begin
-  with Form1.RichEdit2.Lines do
+  with Form1, RichEdit2.Lines do
   begin
     case proses of
-      0: begin
-            Clear;
-            Add('Pre-Processing : ');
+    0: begin
+         Clear;
+         Add('PreProcessing : ');
+       end;
+    1: Add('Baca Data Sinyal Speech ...');
+    2: Add('Framing Data ...');
+    3: Add('PreEmphasis ...');
+    4: Add('Windowing ...');
+    5: Add('FFT ...');
+    6: Add('LPC ...');
+    7: Add('Cepstral ...');
+    100: begin
+          Add('SUKSES ...');
+          Add('------------------------------------');
+          Add('Jumlah Koefisien Cepstral : '+FloattoStr(high(Cep)+1));
+          Add('Jumlah Frame :' + FloattoStr(high(Cep[1])+1));
+          for loop1 := 0 to high(Cep) do
+          begin
+            Add('====================================');
+            for loop2 := 0 to high(Cep[loop1]) do
+              Add('Frame ['+InttoStr(loop2)+']'+'Coef ['+InttoStr(loop1)+']'+#9+ FloattoStr(Cep[loop1,loop2]));
+          end;
          end;
-      1: Add('1. Baca Data Sinyal Speech...');
-      2: Add('2. Framing Data...');
-      3: Add('3. Pre-Emphasis...');
-      4: Add('4. Windowing...');
-      5: Add('5. FFT...');
-      6: Add('6. LPC...');
-      7: Add('7. Cepstral...');
-      100: begin
-              Add('SUKSES...');
-              Add('----------------------------------');
-              Add('Jumlah Koefisien Cepstral : '+floattostr(high(Cep)+1));
-              Add('Jumlah Frame : '+floattostr(high(Cep[1])+1));
-
-              for loop1:=0 to high(Cep) do
-              begin
-                Add('----------------------------------');
-                for loop2:=0 to high(Cep[loop1]) do
-                  Add('Frame [' + inttostr(loop2) + ']' + 'Coef [' + inttostr(loop1) + ']' + #9 + floattostr(Cep[loop1,loop2]));
-              end;
-           end;
     end;
   end;
 end;
@@ -188,58 +188,52 @@ var
   jumframe: integer;
 
 begin
-  TampilkanProcess(0);
-  TampilkanProcess(1);
-  jumframe:= FrameCount(UKURANFRAME, UKURANFRAME div 3, high(sinyal)+1);
-  SetLength(realtime,jumframe);
-  SetLength(imgtime,jumframe);
-  SetLength(realfrek,jumframe);
-  SetLength(imgfrek,jumframe);
-  SetLength(Cep,jumframe);
-  SetLength(Cep,jumframe);
-  TampilkanProcess(2);
-  Pre_Emphasis(0.94,sinyal);
-  SetLength(realtime,jumframe);
+  TampilkanProsess(0);
+  TampilkanProsess(1);
+  jumframe:=FrameCount(UKURANFRAME, UKURANFRAME div 3,high(sinyal)+1);
+  setlength(realtime,jumframe);
+  setlength(imgtime,jumframe);
+  setlength(realfrek,jumframe);
+  setlength(imgfrek,jumframe);
+  setlength(Cep,jumframe);
+  TampilkanProsess(2);
+  pre_emphasis(0.94,sinyal);
+  setlength(realtime,jumframe);
 
   for i:=0 to jumframe-1 do
   begin
-    SetLength(realtime[i],UKURANFRAME);
-    SetLength(imgtime[i],UKURANFRAME);
-    SetLength(realfrek[i],UKURANFRAME);
-    SetLength(imgfrek[i],UKURANFRAME);
+    setlength(realtime[i],UKURANFRAME);
+    setlength(imgtime[i],UKURANFRAME);
+    setlength(realfrek[i],UKURANFRAME);
+    setlength(imgfrek[i],UKURANFRAME);
   end;
-
-  TampilkanProcess(3);
-  Framing(UKURANFRAME,UKURANFRAME div 3,sinyal,realtime);
-  TampilkanProcess(4);
-  SetLength(win,UKURANFRAME);
+  TampilkanProsess(3);
+  framing(UKURANFRAME,UKURANFRAME div 3, sinyal, realtime);
+  TampilkanProsess(4);
+  setlength(win,UKURANFRAME);
   win_sinyal(0,hanning,win);
-  TampilkanProcess(5);
+  TampilkanProsess(5);
 
   for i:=0 to jumframe-1 do
     for j:=0 to UKURANFRAME-1 do
-      realtime[i,j]:=realtime[i,j]*win[j];
-
+        realtime[i,j]:=realtime[i,j]*win[j];
   for i:=0 to jumframe-1 do
-    fft(UKURANFRAME,realtime[i],imgtime[i],realfrek[i],imgfrek[i]);
-
+    fft(UKURANFRAME, realtime[i], imgtime[i],realfrek[i],imgfrek[i]);
   for i:=0 to jumframe-1 do
     for j:=0 to UKURANFRAME-1 do
       realfrek[i,j]:=sqrt(sqr(realfrek[i,j])+sqr(imgfrek[i,j]));
-
-  TampilkanProcess(6);
+  TampilkanProsess(6);
   p:=MakeOrder(FREKUENSI);
-  SetLength(aut,p+1);
-
+  setlength(aut,p+1);
   for i:=0 to jumframe-1 do
   begin
-    SetLength(Cep[i],p+1);
+    setlength(Cep[i],p+1);
     LPCAnalisis(realfrek[i],UKURANFRAME,p,aut);
     lpc2cepstral(p,p,aut,Cep[i]);
     weightingcepstral(p,Cep[i]);
   end;
-  TampilkanProcess(7);
-  TampilkanProcess(100);
+  TampilkanProsess(7);
+  TampilkanProsess(100);
 end;
 
 {==============================================================================}
@@ -267,18 +261,17 @@ var
   loop: integer;
 
 begin
-  jhiden:= length(hunit);
-  ounit:= InitTarget(target);
-  InitTrain(vbobotold, wbobotold, hiden, hiden_in, eror_j, output, out_in, eror_k, ounit);
-
-  for loop:= 1 to iterasi do
+  jhiden:=length(hunit);
+  ounit:=InitTarget(target);
+  InitTrain(vbobotold,wbobotold,hiden,hiden_in,eror_j,output,out_in,eror_k,ounit);
+  for loop:=1 to iterasi do
   begin
-    kenal:= 0;
-    sumall:= 0;
+    kenal:=0;
+    sumall:=0;
     application.ProcessMessages;
     for num:=0 to high(masuk) do
     begin
-      {Feedforward Process}
+      //feedforward process
       LayerIn(masuk[num],hiden_in[0],vbobot[0]);
       FungsiAktivasi(hiden_in[0],hiden[0]);
       if high(hunit)>0 then
@@ -287,50 +280,46 @@ begin
           LayerIn(hiden[i],hiden_in[i+1],vbobot[i+1]);
           FungsiAktivasi(hiden_in[i+1],hiden[i+1]);
         end;
+      LayerIn(hiden[jhiden-1],out_in,wbobot);
+      FungsiAktivasi(out_in,output);
+      //cek target yang dicapai
+      if loop mod 10=0 then
+      begin
+        sum:=0;
+        for i:=1 to high(output) do
+        sum:=sum+abs(output[i]-target[num,i]);
+        sum:=sum/jdata;
+        if sum<ErorMax then
+        inc(kenal);
+        sumall:=sumall+sum;
+        Form1.statusbar1.Panels[1].Text:=' Data identify '+inttostr(kenal)+' from '
+          +inttostr(jdata)+' at '+inttostr(loop)+' epoch';
+        if num=high(masuk) then
+        Form1.statusbar1.Panels[2].Text:='Error = '+floattostr(sumall/jdata);
+        if kenal=jdata then
+          if CekBobotAll(hiden_in,hiden,out_in,output,target,jhiden) then
+          begin
+            result:=2;
+            exit;
+          end;
+      end;
 
-        LayerIn(hiden[jhiden-1], out_in, wbobot);
-        FungsiAktivasi(out_in, output);
+      //backforward process
+      CalculateOutputEror(target[num],output,out_in,eror_k);
+      CalculateHidenEror(eror_k,hiden_in[jhiden-1],wbobot,eror_j[jhiden-1]);
+      if high(hunit)>0 then
+        for i:=high(hunit) downto 1 do
+          CalculateHidenEror(eror_j[i],hiden_in[i-1],vbobot[i],eror_j[i-j]);
 
-        {Cek Target Yang Di Capai}
-        if loop mod 10=0 then
-        begin
-          sum:= 0;
-          for i:=1 to high(output) do
-            sum:= sum + abs(output[i] - target[num,i]);
-          sum:= sum / jdata;
-          if sum<ErorMax then
-            inc(kenal);
-          sumall:= sumall + sum;
-
-          Form1.StatusBar1.Panels[1].Text:='Data Identify '+ inttostr(kenal) + ' from '+inttostr(jdata)+ ' at '+inttostr(loop)+' epoch';
-          if num=high(masuk) then
-            Form1.StatusBar1.Panels[2].Text:= 'Error = '+floattostr(sumall/jdata);
-          if kenal=jdata then
-            if CekBobotAll(hiden_in, hiden, out_in, output, target, jhiden) then
-            begin
-              result:= 2;
-              exit;
-            end;
+      //update bobot
+      UpdateBobot(alpha,miu,eror_k,hiden[jhiden-1],wbobot,wbobotold);
+      UpdateBobot(alpha,miu,eror_j[0],masuk[num],vbobot[0],vbobotold[0]);
+      if high(hunit)>0 then
+        for i:=high(hunit) downto 1 do
+          UpdateBobot(alpha,miu,eror_j[i],hiden[i-1],vbobot[i],vbobotold[i]);
         end;
-
-        {Backforward Process}
-        CalculateOutputEror(target[num], output, out_in, eror_k);
-        CalculateHidenEror(eror_k, hiden_in[jhiden-1], wbobot, eror_j[jhiden-1]);
-
-        if high(hunit)>0 then
-          for i:=high(hunit) downto 1 do
-            CalculateHidenEror(eror_j[i], hiden_in[i-1], vbobot[i], eror_j[i-j]);
-
-        {Update Bobot}
-        UpdateBobot(alpha, miu, eror_k, hiden[jhiden-1], wbobot, wbobotold);
-        UpdateBobot(alpha, miu, eror_j[0], masuk[num], vbobot[0], vbobotold[0]);
-
-        if high(hunit)>0 then
-          for i:=high(hunit) downto 1 do
-            UpdateBobot(alpha, miu, eror_j[i], hiden[i-1], vbobot[i], vbobotold[i]);
-    end;
-  end;
-  result:=1; {Normal Exit}
+      end;
+      result:=1;//normal exit
 end;
 
 {==============================================================================}
@@ -344,19 +333,19 @@ var
   ounit: integer;
 
 begin
-  SetLength(target, jdata);
-  sisa:= jdata mod 3;
+  setlength(target,jdata);
+  sisa:=jdata mod 3;
   if sisa<>0 then
-   sisa:= 1;
-  ounit:= jdata div 3 + sisa + 1;
+   sisa:=1;
+  ounit:=jdata div 3 +sisa+1;
   for a:=0 to jdata-1 do
   begin
-    SetLength(target[a], ounit);
+    setlength(target[a],ounit);
     for b:=1 to ounit-1 do
-      target[a,b]:= 0.1;
+      target[a,b]:=0.1;
     target[a,1+ a div 3]:=0.3+0.3*(a mod 3);
   end;
-  result:= ounit;
+  result:=ounit;
 end;
 
 {==============================================================================}
@@ -368,23 +357,23 @@ var
   j: integer;
   jhiden: integer;
 begin
-  SetLength(hiden, length(hunit));
-  setlength(hiden_in, length(hunit));
-  setlength(eror_j, length(hunit));
+  setlength(hiden,length(hunit));
+  setlength(hiden_in,length(hunit));
+  setlength(eror_j,length(hunit));
   for i:=0 to high(hunit) do
   begin
-    SetLength(hiden[i], hunit[i]);
-    SetLength(hiden_in[i], hunit[i]);
-    SetLength(eror_j[i], hunit[i]);
-    hiden[i,0]:= 1;
+    setlength(hiden[i],hunit[i]);
+    setlength(hiden_in[i],hunit[i]);
+    setlength(eror_j[i],hunit[i]);
+    hiden[i,0]:=1;
   end;
-  SetLength(output,ounit);
-  SetLength(out_in,ounit);
-  SetLength(eror_k,ounit);
-  SetLength(vbobot,length(hunit));
-  SetLength(vbobotold,length(hunit));
-  SetLength(vbobot[0],iunit);
-  SetLength(vbobotold[0],iunit);
+  setlength(output,ounit);
+  setlength(out_in,ounit);
+  setlength(eror_k,ounit);
+  setlength(vbobot,length(hunit));
+  setlength(vbobotold,length(hunit));
+  setlength(vbobot[0],iunit);
+  setlength(vbobotold[0],iunit);
   for i:=0 to iunit-1 do
   begin
     SetLength(vbobot[0,i], hunit[0]);
@@ -414,6 +403,26 @@ begin
     SetLength(wbobotold[i], ounit);
   end;
   InisialisasiBobot(vbobot, wbobot);
+end;
+
+
+   { setlength(vbobot[i+1],hunit[i]);
+    setlength(vbobotold[0,i],hunit[0]);
+    for j:=0 to hunit[i]-1 do
+    begin
+      setlength(vbobot[i+1,j],hunit[i+j]);
+      setlength(vbobotold[i+1,j],hunit[i+1]);
+    end;
+  end;
+  jhiden:=length(hunit);
+  setlength(wbobot,hunit[jhiden-1]);
+  setlength(wbobotold,hunit[jhiden-1]);
+  for i:=0 to hunit[jhiden-1]-1 do
+  begin
+    setlength(wbobot[i],ounit);
+    setlength(wbobotold[i],ounit);
+  end;
+  InisialisasiBobot(vbobot,wbobot);
 end;
 
 {==============================================================================}
