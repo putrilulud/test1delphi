@@ -40,13 +40,13 @@ var
   jum: integer;
 
 begin
-  a:= 0;
-  jum:= 0;
+  a:=0;
+  jum:=0;
   repeat
     inc(jum);
     inc(a,n-m);
-  until a>panjang;
-  result:= jum;
+  until a> panjang;
+    result:=jum;
 end;
 
 {==============================================================================}
@@ -58,10 +58,10 @@ var
   a: integer;
 
 begin
-  SetLength(temp,high(sinyal));
+  setlength(temp,high(sinyal));
   for a:=1 to high(sinyal) do
     temp[a]:=sinyal[a]-koefisien*sinyal[a-1];
-
+    
   for a:=1 to high(sinyal) do
     sinyal[a]:=temp[a];
 end;
@@ -77,18 +77,18 @@ var
   b: integer;
 
 begin
-  panjang:= high(sinyal)+1;
+  panjang:=high(sinyal)+1;
   posisi:=0;
   b:=0;
   repeat
     for a:=0 to n-1 do
-      if posisi+a >= panjang then
-        hasil[b,a]:=0
+      if posisi+a>=panjang then 
+        hasil [b,a] :=0
       else
         hasil[b,a]:=sinyal[posisi+a];
-    inc(posisi,n-m);
-    inc(b);
-  until posisi > panjang;
+      inc(posisi,n-m);
+      inc(b);
+  until posisi>panjang;
 end;
 
 {==============================================================================}
@@ -100,37 +100,34 @@ var
   g: double;
   panjang: integer;
 begin
-  g:=high(win);
+  g:=1;
+  panjang:=high(win);
   for a:=0 to panjang do
     win[a]:=0;
-
   case kode of
-    blackman: blackman_win(win);
-    hanning: hanning_win(win);
-    hamming: hamming_win(win);
-    bartlett: bartlett_win(win);
+    blackman:blackman_win(win);
+    hanning:hanning_win(win);
+    hamming:hamming_win(win);
+    bartlett:bartlett_win(win);
   end;
-
+  
   case nflg of
     0: g:=1;
-
     1: begin
           g:=0;
           for a:=0 to panjang do
             g:=g+sqr(win[a]);
           g:=sqrt(g);
        end;
-
     2: begin
           g:=0;
           for a:=0 to panjang do
-            g:=g+win[a];
+            g:= g+win[a];
        end;
   end;
-
+  
   for a:=0 to panjang do
     win[a]:=win[a]/g;
-
 end;
 
 {==============================================================================}
@@ -162,10 +159,10 @@ var
   panjang: integer;
 
 begin
-  panjang:= high(win);
-  arg:= M_2PI/panjang;
+  panjang:=high(win);
+  arg:=M_2PI/panjang;
   for a:=0 to panjang do
-    win[a]:= 0.5*(1-cos(a*arg));
+    win[a]:=0.5*(1-cos(a*arg));
 end;
 
 {==============================================================================}
