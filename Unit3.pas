@@ -9,65 +9,33 @@ interface
 
 uses math, Unit1;
 
-{17. Make Order}
-function MakeOrder(BandWith: integer):integer;
-{18. Analisis LPC}
-function LPCAnalisis (sinyal: array of double; framelength,p: integer; var a: array of double):integer;
-{19. Auto Corelation}
-procedure autocorelation(sinyal: array of double; frame_length:integer; p: integer; var r: array of double);
-{20. Cari Koefisien Prediksi dari LPC}
-function CariKoefisienPrediksi (r: array of double; p:integer; eps: double; var kp: array of double):integer;
-{21. LPC to Cepstral}
-procedure lpc2cepstral (p1, p2: integer; a: array of double; var c: array of double);
-{22. Pembobotan Koefisien Cepstral}
-procedure weightingcepstral (p: integer; var c: array of double);
+function LPCAnalisis(sinyal:array of double; framelength,p:integer;var a:array of double):integer;
+function MakeOrder(BandWith:integer):integer;
+procedure lpc2cepstral(p1,p2:integer;a:array of double;var c:array of double);
+procedure weightingcepstral(p:integer;var c:array of double);
 
-
-
-const
-  M_PI: double = 3.14159265358979323846;
+const M_PI:double=3.14159265358979323846;
 
 implementation
 
-{==============================================================================}
-{==============================================================================}
-{17. Make Order}
-function MakeOrder(BandWith: integer):integer;
+function MakeOrder(BandWith:integer):integer;
 begin
   result:=2*(BandWith div 1000+1);
 end;
 
-{==============================================================================}
-{==============================================================================}
-{18. Analisis LPC}
-function LPCAnalisis (sinyal: array of double; framelength,p: integer; var a: array of double):integer;
-var
-  r:array of double;
-  flag,b,c:integer;
-  temp:double;
-  sinpred:array of double;
-  
-begin
-  setlength(r,p+1);
-  setlength(sinpred,framelength);
-  autocorelation(sinyal,framelength,p,r);
-  flag:=CariKoefisienPrediksi(r,p,-1,a);
-  for b:=1 to framelength-1 do
-  begin
-    temp:=0;
-    for c:=1 to p do
-      if b-c>=0 then
-        temp:=temp+sinyal[b-c]*a[c];
-    sinpred[b]:=temp;
-  end;
-  result:=flag;
-end;
+//---------------------------------------------------//
+{
+  fungsi autokorelasi untuk meminimalisasi mse dari LPC
+  p->order dari prediksi
+  r->koefisien autokorelasi
+  frame_length->panjang frame
+  sinyal->data sinyal
+  hasil prosedur adalah
+        KOEFISIEN AUTOKORELASI
+}
+//---------------------------------------------------//
 
-
-{==============================================================================}
-{==============================================================================}
-{19. Auto Corelation}
-procedure autocorelation(sinyal: array of double; frame_length:integer; p: integer; var r: array of double);
+procedure autocorelation(sinyal:array of double;frame_length:integer;p:integer;var r:array of double);
 var
   a,b:integer;
   temp:double;
@@ -81,15 +49,25 @@ begin
   end;
 end;
 
-{==============================================================================}
-{==============================================================================}
-{20. Cari Koefisien Prediksi dari LPC}
-function CariKoefisienPrediksi (r: array of double; p:integer; eps: double; var kp: array of double):integer;
+//---------------------------------------------------//
+{
+  fungsi untuk mencari koefisien prediksi dari LPC
+  r -> koefisien autokorelasi
+  p -> order dari prediksi
+  eps -> singular check
+  kp -> koefisien prediksi
+  hasil fungsi adalah :
+  0 -> normally completed
+  1 -> abnormally completed
+  2 -> unstable LPC
+}
+//---------------------------------------------------//
+
+function CariKoefisienPrediksi(r:array of double; p:integer; eps:double; var kp:array of double):integer;
 var
   rmd,mue:double;
   a,b,flag:integer;
   c: array of double;
-  
 begin
   flag := 0;
   setlength(c,p+1);
@@ -100,7 +78,7 @@ begin
   begin
     mue:=-r[a];
     for b:=1 to a-1 do
-      mue:=mue-c[b]*r[a-b];
+    mue:=mue-c[b]*r[a-b];
     mue:=mue/rmd;
     for b:=1 to a-1 do
       kp[b]:=c[b]+mue*c[a-b];
@@ -124,14 +102,66 @@ begin
   result:=flag;
 end;
 
-{==============================================================================}
-{==============================================================================}
-{21. LPC to Cepstral}
-procedure lpc2cepstral (p1, p2: integer; a: array of double; var c: array of double);
+function Gain(p:integer;a:array of double;r:array of double):double;
+var
+  b:integer;
+  temp:double;
+begin
+  temp:=0;
+  for b:=1 to p do
+    temp:=temp+a[b]*r[b];
+  temp:=r[0]-temp;
+  result:=sqrt(temp);
+end;
+
+//---------------------------------------------------//
+{
+  prosedur untuk menganalisa LPC
+  frame_length  -> panjang frame
+  sinyal        -> data sinyal
+  p             -> order dari LPC
+  a             -> koefisien LPC
+  hasilnya adalah apakah lpc kita stabil atau tidak
+}
+//---------------------------------------------------//
+
+function LPCAnalisis(sinyal:array of double; framelength,p:integer; var a:array of double):integer;
+var
+  r:array of double;
+  flag,b,c:integer;
+  temp:double;
+  sinpred:array of double;
+begin
+  setlength(r,p+1);
+  setlength(sinpred,framelength);
+  autocorelation(sinyal,framelength,p,r);
+  flag:=CariKoefisienPrediksi(r,p,-1,a);
+  for b:=1 to framelength-1 do
+  begin
+    temp:=0;
+    for c:=1 to p do
+      if b-c>=0 then
+        temp:=temp+sinyal[b-c]*a[c];
+    sinpred[b]:=temp;
+  end;
+  result:=flag;
+end;
+
+//---------------------------------------------------//
+{
+  prosedur untuk mencari koefisien cepstral
+  p1  -> order dari lpc
+  p2  -> order dari cepstral
+  a   -> koefisien dari lpc
+  c   -> koefisien dari cepstral
+  hasilnya adalah koefisien cepstral -> c
+}
+//---------------------------------------------------//
+
+procedure lpc2cepstral(p1,p2:integer; a:array of double; var c:array of double);
 var
   i,j,k : integer;
   temp  : double;
-  
 begin
   c[0]:=log10(a[0]);
   c[1]:=-a[1];
@@ -151,10 +181,16 @@ begin
   end;
 end;
 
-{==============================================================================}
-{==============================================================================}
-{22. Pembobotan Koefisien Cepstral}
-procedure weightingcepstral (p: integer; var c: array of double);
+//---------------------------------------------------//
+{
+  prosedur untuk pembobotan koefisien cepstral untuk mengurangi sensitivitas
+  p -> order dari cepstral
+  c -> koefisien dari cepstral
+  hasilnya adalah koefisien cepstral yang telah di boboti -> c
+}
+//---------------------------------------------------//
+
+procedure weightingcepstral(p:integer;var c:array of double);
 var
   a:integer;
   w:array of double;
