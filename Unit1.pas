@@ -46,6 +46,7 @@ type
     Series1: TLineSeries;
     Label7: TLabel;
     RichEdit1: TRichEdit;
+    ScrollBar1: TScrollBar;
     procedure BukaFile1Click(Sender: TObject);
     procedure AutoProcess1Click(Sender: TObject);
     procedure ComboBox1Change(Sender: TObject);
@@ -54,6 +55,13 @@ type
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure ScrollBar1Scroll(Sender: TObject; ScrollCode: TScrollCode;
+      var ScrollPos: Integer);
+    procedure RichEdit2Change(Sender: TObject);
+    procedure RichEdit2KeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure FormShow(Sender: TObject);
+
 
   private
     { Private declarations }
@@ -63,13 +71,13 @@ type
 
 const
   MATPHI=3.1415926535897932384626433832795;
-  MAXDATA=15000;//15000 sampel
+  MAXDATA=144000;//15000 sampel
   UKURANFRAME=2048;
-  FREKUENSI=12000;//12 KHz sample rate
+  FREKUENSI=48000;//12 KHz sample rate
 
 var
   Form1: TForm1;
-  maksuji,jumlahuji : word;
+  maksuji,jumlahuji : longword;
   PosisiFile        : Byte;
   JData             : integer;
   Iterasi           : integer;
@@ -100,7 +108,7 @@ procedure BukaFileData(const namafile:string);
 var
   F: File of Smallint;
   dumdata:Smallint;
-  loop:word;
+  loop:longword;
 
 begin
 
@@ -141,7 +149,7 @@ end;
 
 procedure GraphikkanKeWave;
 var
-  loop:word;
+  loop:longword;
 begin
   with Form1, Series1 do
   begin
@@ -371,25 +379,6 @@ begin
   InisialisasiBobot(vbobot, wbobot);
 end;
 
-
-   { setlength(vbobot[i+1],hunit[i]);
-    setlength(vbobotold[0,i],hunit[0]);
-    for j:=0 to hunit[i]-1 do
-    begin
-      setlength(vbobot[i+1,j],hunit[i+j]);
-      setlength(vbobotold[i+1,j],hunit[i+1]);
-    end;
-  end;
-  jhiden:=length(hunit);
-  setlength(wbobot,hunit[jhiden-1]);
-  setlength(wbobotold,hunit[jhiden-1]);
-  for i:=0 to hunit[jhiden-1]-1 do
-  begin
-    setlength(wbobot[i],ounit);
-    setlength(wbobotold[i],ounit);
-  end;
-  InisialisasiBobot(vbobot,wbobot);
-end;   }
 //---------------------------------------------------------
 
 function DoTrain:integer;
@@ -461,7 +450,7 @@ begin
       CalculateHidenEror(eror_k,hiden_in[jhiden-1],wbobot,eror_j[jhiden-1]);
       if high(hunit)>0 then
         for i:=high(hunit) downto 1 do
-          CalculateHidenEror(eror_j[i],hiden_in[i-1],vbobot[i],eror_j[i-j]);
+          CalculateHidenEror(eror_j[i],hiden_in[i-1],vbobot[i],eror_j[i-1]);
 
       //update bobot
       UpdateBobot(alpha,miu,eror_k,hiden[jhiden-1],wbobot,wbobotold);
@@ -519,25 +508,25 @@ end;
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
-  maksuji:=strtoint(ComboBox1.text);
-  with OpenDialog1 do
+  maksuji:=strtoint(ComboBox1.text); //maksuji = combobox1
+  with OpenDialog1 do //komponen untuk membuka dialog / windows explorer
   begin
-    Title:='Buka File Data';
-    Filter:='data File (*.wav)|*.wav';
-    DefaultExt:='wav';
-    FileName:='';
-    InitialDir:=ExtractFileDir(ParamStr(0))+'\data';
-    if Execute then
+    Title:='Buka File Data'; //Nama Window
+    Filter:='data File (*.wav)|*.wav'; //Filter data yang ditampilkan dalam bentuk wav
+    DefaultExt:='wav'; //default ekstension = wav
+    FileName:=''; //filename kosong
+    InitialDir:=ExtractFileDir(ParamStr(0))+'\data'; //inisialdirektori didapat dari direktori data yg terakhir dibuka
+    if Execute then //ketika klik open/OK
     begin
-      inc(PosisiFile);
-      RichEdit1.Lines.Add(FileName);
+      inc(PosisiFile); //penomoran data yang telah dibuka/execute
+      RichEdit1.Lines.Add(FileName);//menambahkan direktori dari filename
     end;
   end;
-  jumlahuji:=jumlahuji+1;
-  if jumlahuji = maksuji then
+  jumlahuji:=jumlahuji+1; // jumlahuji=jumlahuji+1
+  if jumlahuji = maksuji then //jumlahuji = maksuji
   begin
-    Button1.Enabled:=false;
-    Button2.Enabled:=true;
+    Button1.Enabled:=false; // bukafile = disable
+    Button2.Enabled:=true; // preproses = enable
   end;
 end;
 
@@ -552,52 +541,52 @@ var
   temps:string;
 
 begin
-  JData:=StrtoInt(ComboBox1.Text);
-  iterasi:=StrToInt(Edit1.Text);
-  Alpha:=StrToFloat(trim(Edit2.Text));
-  Miu:=StrtoFloat(trim(Edit3.Text));
-  ErorMax:=StrtoFloat(trim(Edit4.Text));
-  SetLength(StrIdentitas,JData);
-  SetLength(HUnit,JumHidden);
-  for a:=0 to JumHidden-1 do
-    HUnit[a]:=HTemp[a]+1;
-  setlength(temp,JData);
-  pan:=0;
-  for a:=0 to JData-1 do
+  JData:=StrtoInt(ComboBox1.Text); //Jdata = Combobox1
+  iterasi:=StrToInt(Edit1.Text); //iterasi = edit1
+  Alpha:=StrToFloat(trim(Edit2.Text)); //alpha = edit2
+  Miu:=StrtoFloat(trim(Edit3.Text)); //miu = edit3
+  ErorMax:=StrtoFloat(trim(Edit4.Text));//erormax = edit4
+  SetLength(StrIdentitas,JData); //stridentitas = jdata
+  SetLength(HUnit,JumHidden); //hunit = jumhidden
+  for a:=0 to JumHidden-1 do //looping jumhidden
+    HUnit[a]:=HTemp[a]+1; //hunit[jumhidden] = htemp[jumhidden] +1
+  setlength(temp,JData); //temp = jdata
+  pan:=0; //panjang = 0
+  for a:=0 to JData-1 do //looping Jdata (Jumlah Total Suara)
   begin
-    BukaFileData(RichEdit1.Lines.Strings[a]);
-    temps:=copy(extractfilename(Form1.OpenDialog1.FileName),1,length(extractfilename(Form1.opendialog1.FileName))- length(extractfileext(Form1.opendialog1.FileName)));
+    BukaFileData(RichEdit1.Lines.Strings[a]); //Buka File Data
+    temps:=copy(extractfilename(Form1.OpenDialog1.FileName),1,length(extractfilename(Form1.opendialog1.FileName))- length(extractfileext(Form1.opendialog1.FileName))); //temp = identitas file
     if not inputquery('Data Name','Nama Untuk Data ke '+inttostr(a+1),temps) then
       application.MessageBox(pchar('Anda tidak menekan tombol OK'
       +#13+'Character identified as '+temps),'Confirmation',mb_ok or mb_iconexclamation);
-    StrIdentitas[a]:=temps;
-    pan:=max(pan,length(RealData));
-    setlength(temp[a],length(RealData));
-    for i:=0 to high(RealData) do
-      temp[a,i]:=RealData[i];
+    StrIdentitas[a]:=temps; //Array dari StrIdentitas = temps
+    pan:=max(pan,length(RealData)); //pan = nilai maksimal dari pan dan panjang realdata
+    setlength(temp[a],length(RealData)); // temp[jdata] =  panjang realdata
+    for i:=0 to high(RealData) do //looping realdata
+      temp[a,i]:=RealData[i]; //temp[jdata, realdata] = realdata
   end;
-  PanData:=pan;
-  for a:=0 to JData-1 do
+  PanData:=pan; //pandata = pan
+  for a:=0 to JData-1 do //looping jdata
   begin
-    curr:=length(temp[a]);
-    if curr<pan then
+    curr:=length(temp[a]); //curr = panjang temp[jdata]
+    if curr<pan then //jika curr < pan
     begin
-      setlength(temp[a],pan);
-      for i:=curr-1 to pan-1 do
-        temp[a,i]:=2;
+      setlength(temp[a],pan); //temp[jdata] = pan
+      for i:=curr-1 to pan-1 do //looping curr s/d pan
+        temp[a,i]:=2; //temp[jdata, curr] = 2
     end;
   end;
-  setlength(Masuk,JData);
-  for a:=0 to JData-1 do
+  setlength(Masuk,JData); //Masuk = Jdata
+  for a:=0 to JData-1 do //looping Jdata
   begin
-    setlength(Cep,0);
-    PreProcessing(temp[a]);
-    IUnit:=length(Cep)*length(Cep[0])+1;
-    setlength(Masuk[a],IUnit);
-    Masuk[a,0]:=1;
-    for i:=0 to high(Cep) do
-      for j:=0 to high(Cep[i]) do
-        Masuk[a,i*length(Cep[i])+j+1]:=Cep[i,j];
+    setlength(Cep,0); //Cep = 0
+    PreProcessing(temp[a]); //Procedure PreProcessing dari temp[jdata]
+    IUnit:=length(Cep)*length(Cep[0])+1; //IUnit = panjang Cep * panjnag Cep[0] + 1
+    setlength(Masuk[a],IUnit);// Masuk[Jdata] = Iunit
+    Masuk[a,0]:=1; // Masuk [jdata,0] = 1
+    for i:=0 to high(Cep) do //looping Cep
+      for j:=0 to high(Cep[i]) do //Looping Cep[cep]
+        Masuk[a,i*length(Cep[i])+j+1]:=Cep[i,j]; //Masuk[JData, Cep * panjang Cep[Cep]+j+i] = Cep [i,j]
   end;
   Button3.Enabled:=true;
 end;
@@ -702,14 +691,44 @@ var
   a:integer;
   temp:string;
 begin
-  JumHidden:=strtoint(ComboBox2.Text);
-  setlength(HTemp,JumHidden);
-  for a:=0 to JumHidden-1 do
+  JumHidden:=strtoint(ComboBox2.Text); //JumHidden = ComboBox2
+  setlength(HTemp,JumHidden); //HTemp = JumHidden
+  for a:=0 to JumHidden-1 do  //Menentukan Jumlah Unit tiap JumHidden(Hidden Layer)
   begin
-    temp:='25';
-    inputquery('Jumlah Unit Hiden Ke - '+inttostr(a+1),'Jumlah Unit : ', temp);
-    HTemp[a]:=strtoint(temp);
+    temp:='25'; //temp = Variabel untuk input Jumlah Unit
+    inputquery('Jumlah Unit Hiden Ke - '+inttostr(a+1),'Jumlah Unit : ', temp); //Popup pengisian Jumlah Unit
+    HTemp[a]:=strtoint(temp); //Array HTemp[JumHidden] = Temp;
   end;
 end;
-end.
 
+procedure TForm1.ScrollBar1Scroll(Sender: TObject; ScrollCode: TScrollCode;
+  var ScrollPos: Integer);
+var x : Integer;
+begin
+  ScrollBar1.Max := RichEdit2.Lines.Count;
+  x := RichEdit2.CaretPos.x;
+  RichEdit2.SetFocus;
+  RichEdit2.Lines[ScrollPos] := RichEdit2.Lines[ScrollPos];
+  RichEdit2.SelStart := RichEdit2.SelStart - Length(RichEdit2.Lines[ScrollPos]) + x;
+end;
+
+
+procedure TForm1.RichEdit2Change(Sender: TObject);
+begin
+  ScrollBar1.Max := RichEdit2.Lines.Count;
+  ScrollBar1.Position := RichEdit2.CaretPos.y;
+end;
+
+procedure TForm1.RichEdit2KeyDown(Sender: TObject; var Key: word;
+  Shift: TShiftState);
+begin
+  ScrollBar1.Position := RichEdit2.CaretPos.y;
+end;
+
+procedure TForm1.FormShow(Sender: TObject);
+begin
+  ScrollBar1.Max := RichEdit2.Lines.Count;
+  ScrollBar1.Position := ScrollBar1.Max;
+end;
+
+end.
